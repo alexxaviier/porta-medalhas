@@ -1,0 +1,28 @@
+name: Gerar Arquivo STL
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Baixar codigo
+      uses: actions/checkout@v4
+
+    - name: Instalar OpenSCAD
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openscad
+
+    - name: Renderizar STL
+      run: openscad -o porta_medalhas.stl porta_medalhas.scad
+
+    - name: Salvar Arquivo Resultante
+      uses: actions/upload-artifact@v4
+      with:
+        name: modelo-3d-stl
+        path: porta_medalhas.stl
