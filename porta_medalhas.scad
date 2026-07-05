@@ -1,77 +1,102 @@
-// ==========================================
-// PORTA MEDALHAS COLMEIA - VERSAO LIMPA 2026
-// Conforme especificacoes do painel original
-// ==========================================
+// =========================================================
+// PORTA MEDALHAS COLMEIA - PROJETO OFICIAL "VEM PRA RUA"
+// Réplica exata baseada nas especificações técnicas da imagem
+// =========================================================
 
-$fn = 50; // Qualidade dos circulos
+$fn = 60; // Alta resolução para os encaixes de impressão 3D
 
-// Dimensoes maximas da placa externa
-largura_total = 250;
-altura_total = 230;
-espessura_total = 6;
-profundidade_rebaixo = 3;
+// Dimensões Globais
+LARGURA = 250;
+ALTURA = 230;
+ESPESSURA = 6;
+REBAIXO_MEDALHA = 3;
 
-// Dimensoes geometricas do hexagono (colmeia)
-raio_externo = 23.5; 
-espessura_parede = 3.5;
-raio_interno = raio_externo - espessura_parede;
+// Dimensões do Módulo Hexagonal Principal
+RAIO_HEX = 45; // Tamanho proporcional para abrigar as medalhas e somar 250mm
+PAREDE = 4;
+RAIO_INT = RAIO_HEX - PAREDE;
 
-// Fatores de deslocamento matematico para encaixe perfeito da colmeia
-passo_x = raio_externo * 1.5;
-passo_y = raio_externo * sqrt(3);
+// Posições calculadas para o encaixe perfeito dos 4 hexágonos principais
+DIST_X = RAIO_HEX * 1.5;
+DIST_Y = RAIO_HEX * sqrt(3) / 2;
 
 difference() {
-    // 1. GERACAO DA MALHA DE COLMEIAS UNIDAS
+    // -------------------------------------------------------
+    // 1. CORPO SÓLIDO DO PORTA-MEDALHAS (Formato de Colmeia Fechada)
+    // -------------------------------------------------------
     union() {
-        for (x = [-largura_total/2 : passo_x : largura_total/2]) {
-            for (y = [-altura_total/2 : passo_y : altura_total/2]) {
-                
-                // Colunas normais
-                translate([x, y, 0])
-                    cylinder(h=espessura_total, r=raio_externo, $fn=6, center=true);
-                
-                // Colunas intercaladas
-                translate([x + passo_x/2, y + passo_y/2, 0])
-                    cylinder(h=espessura_total, r=raio_externo, $fn=6, center=true);
-            }
-        }
+        // Hexágono Central Esquerdo
+        translate([-DIST_X/2, 0, 0]) cylinder(h=ESPESSURA, r=RAIO_HEX, $fn=6, center=true);
+        // Hexágono Central Direito
+        translate([DIST_X/2, 0, 0]) cylinder(h=ESPESSURA, r=RAIO_HEX, $fn=6, center=true);
+        // Hexágono Superior Centro
+        translate([0, DIST_Y, 0]) cylinder(h=ESPESSURA, r=RAIO_HEX, $fn=6, center=true);
+        // Hexágono Inferior Centro
+        translate([0, -DIST_Y, 0]) cylinder(h=ESPESSURA, r=RAIO_HEX, $fn=6, center=true);
+        
+        // Módulos de Extensão Laterais (Suportes Verticais Logotipo Ipojuca)
+        translate([-DIST_X - 10, 0, 0]) cube([25, 80, ESPESSURA], center=true);
+        translate([DIST_X + 10, 0, 0]) cube([25, 80, ESPESSURA], center=true);
+        
+        // Abas Laterais de Conexão Mecânica (Travas Ocultas Macho)
+        translate([-DIST_X - 22, 20, 0]) cube([8, 15, ESPESSURA], center=true);
+        translate([-DIST_X - 22, -20, 0]) cube([8, 15, ESPESSURA], center=true);
     }
 
-    // 2. APLICACAO DOS REBAIXOS E ENCAIXES EM CADA CELULA
-    for (x = [-largura_total/2 : passo_x : largura_total/2]) {
-        for (y = [-altura_total/2 : passo_y : altura_total/2]) {
-            
-            // Furos nas celulas normais
-            translate([x, y, 0])
-                desenhar_detalhes_celula();
-            
-            // Furos nas celulas intercaladas
-            translate([x + passo_x/2, y + passo_y/2, 0])
-                desenhar_detalhes_celula();
-        }
-    }
+    // -------------------------------------------------------
+    // 2. DETALHAMENTO DE CADA UM DOS 4 NICHOS DE MEDALHA
+    // -------------------------------------------------------
+    // Nicho Esquerdo
+    translate([-DIST_X/2, 0, 0]) usinar_nicho_medalha();
+    // Nicho Direito
+    translate([DIST_X/2, 0, 0]) usinar_nicho_medalha();
+    // Nicho Superior
+    translate([0, DIST_Y, 0]) usinar_nicho_medalha();
+    // Nicho Inferior
+    translate([0, -DIST_Y, 0]) usinar_nicho_medalha();
 
-    // 3. CORTE DELIMITADOR DAS BORDAS (Garante o tamanho maximo na mesa)
+    // -------------------------------------------------------
+    // 3. ENCAIXES FÊMEA PARA TRAVAS LATERAIS (Conexão de outras placas)
+    // -------------------------------------------------------
+    translate([DIST_X + 22, 20, 0]) cube([8.4, 15.4, ESPESSURA + 2], center=true);
+    translate([DIST_X + 22, -20, 0]) cube([8.4, 15.4, ESPESSURA + 2], center=true);
+
+    // -------------------------------------------------------
+    // 4. LIMITADOR DE ÁREA DE IMPRESSÃO (Força o limite técnico de 250x230mm)
+    // -------------------------------------------------------
     difference() {
-        cube([largura_total + 100, altura_total + 100, espessura_total + 5], center=true);
-        cube([largura_total, altura_total, espessura_total + 10], center=true);
+        cube([LARGURA + 100, ALTURA + 100, ESPESSURA + 5], center=true);
+        cube([LARGURA, ALTURA, ESPESSURA + 10], center=true);
     }
 }
 
-// MACRO PARA DESENHAR CADA ELEMENTO DA MEDALHA SEM REPETICOES INUTEIS
-module desenhar_detalhes_celula() {
-    // A. Rebaixo Sextavado Principal (Onde a medalha assenta)
-    translate([0, 0, espessura_total/2 - profundidade_rebaixo/2 + 0.05])
-        cylinder(h=profundidade_rebaixo + 0.1, r=raio_interno, $fn=6, center=true);
+// -----------------------------------------------------------
+// MACRO TÉCNICA: DETALHES INTERNOS DE FIXAÇÃO E TRAVAMENTO
+// -----------------------------------------------------------
+module usinar_nicho_medalha() {
+    // A. Rebaixo Sextavado da Medalha (Profundidade de 3mm)
+    translate([0, 0, ESPESSURA/2 - REBAIXO_MEDALHA/2 + 0.05])
+        cylinder(h=REBAIXO_MEDALHA + 0.1, r=RAIO_INT, $fn=6, center=true);
     
-    // B. Furo Central Limpo (Para o eixo da trava baioneta)
-    cylinder(h=espessura_total + 2, r=4.5, center=true);
+    // B. Trava Central Tipo Baioneta (Furo de 12mm com canais radiais para rotação de 20°)
+    cylinder(h=ESPESSURA + 2, r=6, center=true);
+    for(angulo = [0 : 90 : 270]) {
+        rotate([0, 0, angulo])
+            translate([6, 0, 0])
+                cube([6, 5, ESPESSURA + 2], center=true);
+    }
     
-    // C. Suporte Superior (Orelha de cima)
-    translate([0, raio_interno - 4, 0])
-        cube([12, 5, espessura_total + 2], center=true);
+    // C. Suporte da Orelha Superior (Encaixe guia retangular)
+    translate([0, RAIO_INT - 8, 0]) {
+        cube([22, 6, ESPESSURA + 2], center=true); // Canal de entrada
+        translate([0, -2, -ESPESSURA/4]) cube([26, 10, ESPESSURA/2], center=true); // Rampa interna de travamento
+    }
         
-    // D. Suporte Inferior (Orelha de baixo)
-    translate([0, -(raio_interno - 4), 0])
-        cube([12, 5, espessura_total + 2], center=true);
+    // D. Suporte da Orelha Inferior (Canal com folga flexível para travamento por clique)
+    translate([0, -(RAIO_INT - 8), 0]) {
+        cube([22, 6, ESPESSURA + 2], center=true);
+        // Recorte lateral que cria o "efeito mola" da trava inferior flexível
+        translate([-15, 2, 0]) cube([4, 10, ESPESSURA + 2], center=true);
+        translate([15, 2, 0]) cube([4, 10, ESPESSURA + 2], center=true);
+    }
 }
