@@ -1,103 +1,96 @@
 // =========================================================
-// PORTA MEDALHAS COLMEIA - MANDALA CENTRAL "VEM PRA RUA"
-// Réplica exata: Moldura hexagonal com fundo mini-colmeia
+// PORTA MEDALHAS COLMEIA - PROJETO ENGENHARIA REVERSA "VEM PRA RUA"
+// Código definitivo baseado em camadas lógicas puras
 // =========================================================
 
-$fn = 60; // Alta resolução para os círculos e encaixes
+$fn = 60; // Resolução para furos e círculos
 
-// Dimensões da Peça Final
+// 1. VARIÁVEIS DO PROJETO (MEDIDAS EXATAS DA IMAGEM)
 LARGURA = 250;
 ALTURA = 230;
-ESPESSURA_MOLDURA = 8;
-ESPESSURA_GRADE = 3.5; // Fundo mais fino para destacar as medalhas
+ESPESSURA_TOTAL = 6;
+LARGURA_MOLDURA = 10;
 
-// Diâmetro da Mandala Central (União das 4 medalhas + folga)
-DIAMETRO_MANDALA = 145; 
-RAIO_MANDALA = DIAMETRO_MANDALA / 2;
+// Configuração milimétrica da grade colmeia
+RAIO_HEX = 7.5; 
+PAREDE_HEX = 1.8;
+PASSO_X = RAIO_HEX * 1.73205;
+PASSO_Y = RAIO_HEX * 1.5;
 
-// Parâmetros da Grade Interna (Mini-colmeias)
-RAIO_MINI_HEX = 8;
-PAREDE_MINI_HEX = 1.8;
-PASSO_X = RAIO_MINI_HEX * 1.73205;
-PASSO_Y = RAIO_MINI_HEX * 1.5;
+// Diâmetro de assentamento da mandala central (4 medalhas)
+RAIO_MANDALA = 142 / 2;
 
+// -------------------------------------------------------
+// CONSTRUÇÃO DO MODELO POR SOMA E SUBTRAÇÃO LÓGICA
+// -------------------------------------------------------
 difference() {
-    // -------------------------------------------------------
-    // 1. CORPO PRINCIPAL (MOLDURA + GRADE DE FUNDO)
-    // -------------------------------------------------------
+    
+    // UNIÃO: Tudo o que é SÓLIDO na peça
     union() {
-        // Moldura Hexagonal Externa Sólida
-        cylinder(h=ESPESSURA_MOLDURA, r=LARGURA/2, $fn=6, center=true);
-    }
-
-    // -------------------------------------------------------
-    // 2. CORTE DO REBAIXO PARA GERAR A MOLDURA GROSSA EXTERNA
-    // -------------------------------------------------------
-    translate([0, 0, ESPESSURA_GRADE/2 + 0.1])
-        cylinder(h=ESPESSURA_MOLDURA, r=LARGURA/2 - 12, $fn=6, center=true);
-
-    // -------------------------------------------------------
-    // 3. PERFURAÇÃO DA GRADE ESTILO COLMEIA DE FUNDO
-    // -------------------------------------------------------
-    // Cria os furos sextavados apenas na área interna da grade
-    for (x = [-LARGURA/2 : PASSO_X : LARGURA/2]) {
-        for (y = [-ALTURA/2 : PASSO_Y : ALTURA/2]) {
-            
-            // Coluna Normal
-            translate([x, y, 0])
-                cylinder(h=ESPESSURA_MOLDURA + 2, r=RAIO_MINI_HEX - PAREDE_MINI_HEX, $fn=6, center=true);
-            
-            // Coluna Intercalada
-            translate([x + PASSO_X/2, y + PASSO_Y/2, 0])
-                cylinder(h=ESPESSURA_MOLDURA + 2, r=RAIO_MINI_HEX - PAREDE_MINI_HEX, $fn=6, center=true);
-        }
-    }
-}
-
-// -----------------------------------------------------------
-// 4. ADIÇÃO DOS ENCAIXES E APONTAMENTOS CENTRALIZADOS
-// -----------------------------------------------------------
-// Adiciona os blocos sólidos centrais onde as medalhas e fitas apoiam
-difference() {
-    union() {
-        // Anel central de suporte para o assentamento das medalhas
+        // A. A grande moldura hexagonal externa
         difference() {
-            cylinder(h=ESPESSURA_MOLDURA, r=RAIO_MANDALA + 3, center=true);
-            cylinder(h=ESPESSURA_MOLDURA + 2, r=RAIO_MANDALA - 4, center=true);
+            cylinder(h=ESPESSURA_TOTAL, r=LARGURA/2, $fn=6, center=true);
+            cylinder(h=ESPESSURA_TOTAL + 2, r=LARGURA/2 - LARGURA_MOLDURA, $fn=6, center=true);
         }
         
-        // Eixo Sólido Central para o mecanismo da Baioneta
-        cylinder(h=ESPESSURA_MOLDURA, r=16, center=true);
+        // B. Os 3 Olhais maciços dos parafusos (Esquerda, Direita e Base)
+        translate([-LARGURA/2 + 18, 0, 0]) cylinder(h=ESPESSURA_TOTAL, r=11, center=true);
+        translate([LARGURA/2 - 18, 0, 0]) cylinder(h=ESPESSURA_TOTAL, r=11, center=true);
+        translate([0, -ALTURA/2 + 14, 0]) cylinder(h=ESPESSURA_TOTAL, r=11, center=true);
         
-        // Guias verticais para passagem das fitas superiores e inferiores
-        translate([0, 0, 0]) cube([35, ALTURA - 20, ESPESSURA_MOLDURA], center=true);
+        // C. O Anel Central flutuante que serve de batente para as medalhas
+        difference() {
+            cylinder(h=ESPESSURA_TOTAL, r=RAIO_MANDALA + 1, center=true);
+            cylinder(h=ESPESSURA_TOTAL + 2, r=RAIO_MANDALA - 2, center=true);
+        }
         
-        // Abas de fixação para parafusos nas pontas laterais da moldura
-        translate([-LARGURA/2 + 15, 0, 0]) cylinder(h=ESPESSURA_MOLDURA, r=12, center=true);
-        translate([LARGURA/2 - 15, 0, 0]) cylinder(h=ESPESSURA_MOLDURA, r=12, center=true);
-        translate([0, -ALTURA/2 + 12, 0]) cylinder(h=ESPESSURA_MOLDURA, r=12, center=true);
+        // D. O Miolo central maciço onde prende a Baioneta
+        cylinder(h=ESPESSURA_TOTAL, r=15, center=true);
+        
+        // E. A GRADE DE COLMEIA CONTÍNUA (Preenche todo o fundo)
+        // Criada por interseção para ficar restrita apenas ao interior do hexágono
+        intersection() {
+            cylinder(h=ESPESSURA_TOTAL, r=LARGURA/2 - LARGURA_MOLDURA + 1, $fn=6, center=true);
+            
+            // Malha de mini-hexágonos sólidos interconectados
+            union() {
+                for (x = [-LARGURA/2 - 20 : PASSO_X : LARGURA/2 + 20]) {
+                    for (y = [-ALTURA/2 - 20 : PASSO_Y : ALTURA/2 + 20]) {
+                        // Linhas normais
+                        translate([x, y, 0]) 
+                            cylinder(h=ESPESSURA_TOTAL, r=RAIO_HEX, $fn=6, center=true);
+                        // Linhas intercaladas (Desenho colmeia perfeito)
+                        translate([x + PASSO_X/2, y + PASSO_Y/2, 0]) 
+                            cylinder(h=ESPESSURA_TOTAL, r=RAIO_HEX, $fn=6, center=true);
+                    }
+                }
+            }
+        }
     }
 
-    // Usinagem do Furo Central da Trava Baioneta (Com as rampas internas)
-    cylinder(h=ESPESSURA_MOLDURA + 2, r=6.5, center=true);
-    for(a = [0 : 90 : 270]) {
-        rotate([0, 0, a])
-            translate([6.5, 0, 0])
-                cube([4, 5, ESPESSURA_MOLDURA + 2], center=true);
-    }
-    
-    // Furos escareados de fixação na parede (2 nas laterais, 1 embaixo)
-    translate([-LARGURA/2 + 15, 0, 0]) cylinder(h=ESPESSURA_MOLDURA + 2, r=2.5, center=true);
-    translate([LARGURA/2 - 15, 0, 0]) cylinder(h=ESPESSURA_MOLDURA + 2, r=2.5, center=true);
-    translate([0, -ALTURA/2 + 12, 0]) cylinder(h=ESPESSURA_MOLDURA + 2, r=2.5, center=true);
-    
-    // Recorte vazado interno para passagem das fitas de cetim
-    translate([-16, 0, 0]) cube([6, ALTURA - 40, ESPESSURA_MOLDURA + 2], center=true);
-    translate([16, 0, 0]) cube([6, ALTURA - 40, ESPESSURA_MOLDURA + 2], center=true);
-    
-    // Ajuste de Limite das Bordas Externas
-    difference() {
-        cube([LARGURA + 100, ALTURA + 100, ESPESSURA_MOLDURA + 5], center=true);
-        cylinder(h=ESPESSURA_MOLDURA + 10, r=LARGURA/2, $fn=6, center=true);
+    // SUBTRAÇÃO: Furos funcionais que cortam a peça de lado a lado
+    union() {
+        // 1. Os furos internos de cada mini-colmeia (Deixa apenas as paredes de 1.8mm)
+        for (x = [-LARGURA/2 - 20 : PASSO_X : LARGURA/2 + 20]) {
+            for (y = [-ALTURA/2 - 20 : PASSO_Y : ALTURA/2 + 20]) {
+                translate([x, y, 0]) 
+                    cylinder(h=ESPESSURA_TOTAL + 2, r=RAIO_HEX - PAREDE_HEX, $fn=6, center=true);
+                translate([x + PASSO_X/2, y + PASSO_Y/2, 0]) 
+                    cylinder(h=ESPESSURA_TOTAL + 2, r=RAIO_HEX - PAREDE_HEX, $fn=6, center=true);
+            }
+        }
+        
+        // 2. O Furo da Trava Baioneta Central (Com as 4 ranhuras guias)
+        cylinder(h=ESPESSURA_TOTAL + 2, r=6, center=true);
+        for(a = [0 : 90 : 270]) {
+            rotate([0, 0, a])
+                translate([6, 0, 0])
+                    cube([4, 4, ESPESSURA_TOTAL + 2], center=true);
+        }
+        
+        // 3. Os 3 furos de fixação na parede (Centralizados nos olhais)
+        translate([-LARGURA/2 + 18, 0, 0]) cylinder(h=ESPESSURA_TOTAL + 2, r=2.5, center=true);
+        translate([LARGURA/2 - 18, 0, 0]) cylinder(h=ESPESSURA_TOTAL + 2, r=2.5, center=true);
+        translate([0, -ALTURA/2 + 14, 0]) cylinder(h=ESPESSURA_TOTAL + 2, r=2.5, center=true);
     }
 }
